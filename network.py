@@ -1,7 +1,8 @@
 from config import EvolutionParams
 from node import Node
 from connection import Connection
-from random import randint, uniform
+from random import randint, uniform, random
+from numpy import normal
 
 class Network:
 
@@ -76,3 +77,96 @@ class Network:
             if self.all_connections[connection_number].to_node == to_node:
                 return True
         return False
+
+    def feed_forward(self):
+
+        if self.bias_node:
+            output_layer = self.all_nodes[self.input_nodes + 2].layer  # first output node is first node after all
+            # input nodes plus bias node
+        else:
+            output_layer = self.all_nodes[self.input_nodes + 1].layer  # first output node is first node after all
+            # input nodes
+
+        layers = []
+        # build a list of layers, each of which contains the nodes in that layer
+        for i in range(output_layer + 1):
+            layers.append([])  # add a list for each layer
+        for i in range(len(self.all_nodes)):
+            layers[self.all_nodes[i].layer].append(i)  # add each node to the corresponding layer
+
+        for layer in layers[:output_layer]:  # iterate over nodes layer by layer, omitting the output layer
+            for node_index in layer:
+                node = self.all_nodes[node_index]
+
+                if node.layer is not 0 and node.layer is not output_layer:  # don't call activate method on output nodes
+                        node.activate()
+
+                if node.layer is not output_layer:  # do not feedforward output nodes
+                    for connection_number in node.connections:
+                        # multiply output value of node by connection weight and add it to the to_node input sum
+                        connection = self.all_connections[connection_number]
+                        self.all_nodes[connection.to_node].input_sum += node.output_value * connection.weight
+
+        # finish by activating output nodes
+        if self.bias_node:
+            for node in self.all_nodes[self.all_nodes[self.input_nodes + 1:self.input_nodes + 1 + self.output_nodes]]:
+                node.activate()
+        else:
+            for node in self.all_nodes[self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]]:
+                node.activate()
+
+    def mutate(self):
+
+        if random() <= EvolutionParams.mutate_weight_refine_probability:  # probability to change a connection weight
+            connection = self.all_connections[randint(0, len(self.all_connections) - 1)]
+            if not connection.active:
+                connection = self.all_connections[randint(0, len(self.all_connections) - 1)]
+            if random() <= EvolutionParams.mutate_new_random_weight_probability:  # probability for new random weight
+                connection.weight = uniform(-1, 1)
+            else:  # otherwise slightly adjust weight
+                connection.weight += normal() / 50
+                if connection.weight > 1:
+                    connection.weight = 1
+                elif connection.weight < -1:
+                    connection.weight = -1
+
+        if random() <= EvolutionParams.new_random_connection_probability:  # random new connection
+            self.new_random_connection()
+
+        if random() <= EvolutionParams.new_node_probability:
+            # select a random connection to replace by a node and 2 connections
+            rand_connection_index = randint(0, len(self.all_connections) - 1)
+            while not self.all_connections[rand_connection_index].active:  # make sure selected connection is active
+                rand_connection_index = randint(0, len(self.all_connections) - 1)
+            connection = self.all_connections[rand_connection_index]  # get the connection object
+            from_node = connection.from_node  # get from_node index
+            to_node = connection.to_node  # get to_node index
+            self.all_nodes[from_node].connections.remove(rand_connection_index)  # remove connection index from
+            # from_node connections list
+            connection.active = False  # deactivate connection
+            self.add_node(from_layer=self.all_nodes[from_node].layer, to_layer=self.all_nodes[to_node].layer)  # add
+            # new node in middle
+            self.add_connection(from_node, len(self.all_nodes) - 1, uniform(-1, 1))  # link from_node to new node
+            self.add_connection(len(self.all_nodes) - 1, to_node, uniform(-1, 1))  # link new node to to_node
+
+    def calculate_fitness(self, fitness_parameters):
+
+        self.fitness = sum(self.fitness_boosts) + sum(fitness_parameters)
+
+    def set_inputs(self, input_values):
+        for node in self.all_nodes:  # reset input sums
+            node.input_sum = 0.0
+        for i in range(self.input_nodes):
+            self.all_nodes[i].output_value = input_values[i]
+
+    def get_outputs(self):
+        output_values = []
+        if self.bias_node:
+            for output_node in self.all_nodes[self.input_nodes + 1: self.input_nodes + 1 + self.output_nodes]:  # With bias node
+                output_values.append(output_node.output_value)
+        else:
+            for output_node in self.all_nodes[self.input_nodes: self.input_nodes + self.output_nodes]:  # No bias node
+                output_values.append(output_node.output_value)
+
+        return output_values
+
