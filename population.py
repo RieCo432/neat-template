@@ -64,7 +64,7 @@ class Population:
             for i in range(self.population_size):
                 self.all_networks.append(Network(input_nodes, output_nodes, bias_node=bias_node, init_random_connections=init_random_connections))
 
-    def set_best_networks(self):
+    def _set_best_networks(self):
 
         self.max_fitnesses = [0] * self.num_of_bests
         self.best_networks_indexes = []
@@ -82,7 +82,7 @@ class Population:
                 self.best_networks_indexes.append(i)
                 self.all_networks[i].is_best = True
 
-    def generate_offspring(self):
+    def _generate_offspring(self):
         new_nets = []
         self.generation += 1
 
@@ -99,7 +99,7 @@ class Population:
             self.fitness_sum += net.fitness
 
         for i in range(self.num_of_bests, self.population_size):
-            parent = self.select_parent()
+            parent = self._select_parent()
             new_nets[i].all_nodes = deepcopy(self.all_networks[parent].all_nodes)
             new_nets[i].all_connections = deepcopy(self.all_networks[parent].all_connections)
             new_nets[i].is_best = False
@@ -109,13 +109,18 @@ class Population:
         for i in range(self.num_of_bests, self.population_size):
             self.all_networks[i].mutate()
 
-    def select_parent(self):
+    def _select_parent(self):
         rand = uniform(0, self.fitness_sum)
         running_sum = 0
         for i in range(0, len(self.all_networks)):
             running_sum += self.all_networks[i].fitness
             if running_sum >= rand:
                 return i
+
+    def evolve(self):
+
+        self._set_best_networks()
+        self._generate_offspring()
 
     def save_to_file(self):
         population_dict = {"gen": self.generation, "input_nodes": self.input_nodes, "output_nodes": self.output_nodes, "size": self.population_size, "bias_node": self.bias_node, "num_of_bests": self.num_of_bests, "nets": []}
