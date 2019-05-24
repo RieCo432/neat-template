@@ -2,13 +2,14 @@ from config import EvolutionParams
 from node import Node
 from connection import Connection
 from random import randint, uniform, random
-from numpy import normal
+from numpy.random import normal
+
 
 class Network:
 
     # this class holds the network, its connections, nodes, etc...
 
-    def __init__(self, input_nodes, output_nodes, bias_node=False, init_rand_connections=0):
+    def __init__(self, input_nodes, output_nodes, bias_node=False, init_random_connections=0):
 
         self.input_nodes = input_nodes  # number of input nodes
         self.output_nodes = output_nodes  # numbe of output nodes
@@ -34,7 +35,7 @@ class Network:
             self.add_node(autolayer=False)
             self.all_nodes[-1].layer  = 1  # set output nodes to layer 1
 
-        for i in range(init_rand_connections):  # generate desired amount of random connections
+        for i in range(init_random_connections):  # generate desired amount of random connections
             self.new_random_connection()
 
     def add_node(self, autolayer=True, from_layer=0, to_layer=0):
@@ -51,10 +52,11 @@ class Network:
 
     def add_connection(self, from_node, to_node, weight):
         # generate a new connection object with specified parameters (length of connections list will be index of new)
-        new_connection = Connection(from_node, to_node, weight, len(self.all_connections))
-        self.all_connections.append(new_connection)  # append new connection to the list of all connections
-        self.all_nodes[from_node].connections.append(len(self.all_connections))  # add the index of the new connection
-        # to the list of outgoing connections of the from_node
+        if not self.connection_exists(from_node, to_node):
+            new_connection = Connection(from_node, to_node, weight, len(self.all_connections))
+            self.all_nodes[from_node].connections.append(len(self.all_connections))  # add the index of the new connection
+            self.all_connections.append(new_connection)  # append new connection to the list of all connections
+            # to the list of outgoing connections of the from_node
 
     def new_random_connection(self):
 
@@ -63,17 +65,21 @@ class Network:
         to_node = randint(0, len(self.all_nodes) - 1)
 
         # check that from_node is in a lower layer than to_node and that the connection does not already exist
-        while self.all_nodes[from_node].layer >= self.all_nodes[to_node].layer or self.connection_exists(from_node, to_node):
+        iterations = 0  # to limit number of random searches. In case of a fully connected network this would result
+        # in an infinite loop
+        while (self.all_nodes[from_node].layer >= self.all_nodes[to_node].layer or self.connection_exists(from_node, to_node)) and iterations <= len(self.all_nodes)**2:
             from_node = randint(0, len(self.all_nodes) - 1)
             to_node = randint(0, len(self.all_nodes) - 1)
+            iterations += 1
 
         # add connection between specified nodes with random weight
-        self.add_connection(from_node, to_node, uniform(-1, 1))
+        if iterations < len(self.all_nodes)**2:
+            self.add_connection(from_node, to_node, uniform(-1, 1))
 
     def connection_exists(self, from_node, to_node):
         # check if a certain connection already exists by iterating over the connection coming out of from_node
         # and checking if any of them goes to to_node
-        for connection_number in self.all_nodes[from_node].connection:
+        for connection_number in self.all_nodes[from_node].connections:
             if self.all_connections[connection_number].to_node == to_node:
                 return True
         return False
@@ -109,15 +115,15 @@ class Network:
 
         # finish by activating output nodes
         if self.bias_node:
-            for node in self.all_nodes[self.all_nodes[self.input_nodes + 1:self.input_nodes + 1 + self.output_nodes]]:
+            for node in self.all_nodes[self.input_nodes + 1:self.input_nodes + 1 + self.output_nodes]:
                 node.activate()
         else:
-            for node in self.all_nodes[self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]]:
+            for node in self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]:
                 node.activate()
 
     def mutate(self):
 
-        if random() <= EvolutionParams.mutate_weight_refine_probability:  # probability to change a connection weight
+        if random() <= EvolutionParams.mutate_weight_refine_probability and len(self.all_connections) > 0:  # probability to change a connection weight
             connection = self.all_connections[randint(0, len(self.all_connections) - 1)]
             if not connection.active:
                 connection = self.all_connections[randint(0, len(self.all_connections) - 1)]
@@ -133,7 +139,7 @@ class Network:
         if random() <= EvolutionParams.new_random_connection_probability:  # random new connection
             self.new_random_connection()
 
-        if random() <= EvolutionParams.new_node_probability:
+        if random() <= EvolutionParams.new_node_probability and len(self.all_connections) > 0:
             # select a random connection to replace by a node and 2 connections
             rand_connection_index = randint(0, len(self.all_connections) - 1)
             while not self.all_connections[rand_connection_index].active:  # make sure selected connection is active
