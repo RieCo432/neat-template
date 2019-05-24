@@ -11,7 +11,7 @@ from random import uniform
 class Population:
     # contains population
 
-    def __init__(self, input_nodes=0, output_nodes=0, bias_node=False, random_init_connections=0, filename=None, population_size=300, num_of_bests):
+    def __init__(self, input_nodes=0, output_nodes=0, bias_node=False, random_init_connections=0, filename=None, population_size=300, num_of_bests=1):
         self.all_networks = []
         self.generation = 1
         self.best_fitness = 0
@@ -117,12 +117,16 @@ class Population:
         population_dict = {"gen": self.generation, "input_nodes": self.input_nodes, "output_nodes": self.output_nodes, "size": self.population_size, "bias_node": self.bias_node, "nets": []}
         for net in self.all_networks:
             nodes = []
+            if self.bias_node:
+                last_layer = net.all_nodes[self.input_nodes + 1].layer
+            else:
+                last_layer = net.all_nodes[self.input_nodes].layer
             for node in net.all_nodes:
                 nodes.append({"layer": node.layer, "connections": node.connections})
             connections = []
             for connection in net.all_connections:
                 connections.append({"from": connection.from_node, "to": connection.from_node, "weight": connection.weight, "conn_num": connection.conn_num, "active": str(connection.active)})
-            final_net_dict = {"nodes": nodes, "connections": connections}
+            final_net_dict = {"last_layer": last_layer, "nodes": nodes, "connections": connections}
             population_dict["nets"].append(final_net_dict)
 
         with open(self.filename, "w") as fout:

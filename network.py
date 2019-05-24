@@ -81,10 +81,10 @@ class Network:
     def feed_forward(self):
 
         if self.bias_node:
-            output_layer = self.all_nodes[self.input_nodes + 2].layer  # first output node is first node after all
+            output_layer = self.all_nodes[self.input_nodes + 1].layer  # first output node is first node after all
             # input nodes plus bias node
         else:
-            output_layer = self.all_nodes[self.input_nodes + 1].layer  # first output node is first node after all
+            output_layer = self.all_nodes[self.input_nodes].layer  # first output node is first node after all
             # input nodes
 
         layers = []
