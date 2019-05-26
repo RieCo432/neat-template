@@ -10,11 +10,13 @@ class Network:
 
     # this class holds the network, its connections, nodes, etc...
 
-    def __init__(self, input_nodes, output_nodes, bias_node=False, init_random_connections=0):
+    def __init__(self, input_nodes, output_nodes, bias_node=False, init_random_connections=0, activation_function=ActivationFunctions.sigmoid, sigmoid_factor=ActivationFunctions.default_sigmoid_fact):
 
         self.input_nodes = input_nodes  # number of input nodes
         self.output_nodes = output_nodes  # number of output nodes
         self.bias_node = bias_node  # is bias node used?
+        self.activation_function = activation_function
+        self.sigmoid_factor = sigmoid_factor
 
         self.fitness = 0  # contains the fitness of this particular network object
         self.is_best = False  # is this the best network in the current population?
@@ -87,14 +89,17 @@ class Network:
                 return True
         return False
 
-    def feed_forward(self, activation_function=ActivationFunctions,
-                     sigmoid_factor=ActivationFunctions.default_sigmoid_fact):
+    def feed_forward(self):
 
         if self.bias_node:
             output_layer = self.all_nodes[self.input_nodes + 1].layer  # first output node is first node after all
+            for i in range(self.input_nodes + 1, self.input_nodes + 1 + self.output_nodes):
+                self.all_nodes[i].input_sum = 0
             # input nodes plus bias node
         else:
             output_layer = self.all_nodes[self.input_nodes].layer  # first output node is first node after all
+            for i in range(self.input_nodes, self.input_nodes + self.output_nodes):
+                self.all_nodes[i].input_sum = 0
             # input nodes
 
         layers = []
@@ -107,9 +112,8 @@ class Network:
         for layer in layers[:output_layer]:  # iterate over nodes layer by layer, omitting the output layer
             for node_index in layer:
                 node = self.all_nodes[node_index]
-
                 if node.layer is not 0 and node.layer is not output_layer:  # don't call activate method on output nodes
-                        node.activate(activation_function, sigmoid_factor)
+                        node.activate(self.activation_function, self.sigmoid_factor)
 
                 if node.layer is not output_layer:  # do not feedforward output nodes
                     for connection_number in node.connections:
@@ -120,10 +124,10 @@ class Network:
         # finish by activating output nodes
         if self.bias_node:
             for node in self.all_nodes[self.input_nodes + 1:self.input_nodes + 1 + self.output_nodes]:
-                node.activate(activation_function, sigmoid_factor)
+                node.activate(self.activation_function, self.sigmoid_factor)
         else:
             for node in self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]:
-                node.activate(activation_function, sigmoid_factor)
+                node.activate(self.activation_function, self.sigmoid_factor)
 
     def mutate(self):
 

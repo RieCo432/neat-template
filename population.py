@@ -52,7 +52,9 @@ class Population:
                 self.sigmoid_factor = population_dict["sigmoid_fact"]
                 for net in nets:
                     import_net = Network(population_dict["input_nodes"], population_dict["output_nodes"],
-                                         bias_node=population_dict["bias_node"] == "True")
+                                         bias_node=population_dict["bias_node"] == "True",
+                                         activation_function=self.activation_function,
+                                         sigmoid_factor=self.sigmoid_factor)
                     import_nodes = []
                     for node in net["nodes"]:
                         import_node = Node()
@@ -73,7 +75,9 @@ class Population:
         else:
             for i in range(self.population_size):
                 self.all_networks.append(Network(input_nodes, output_nodes, bias_node=bias_node,
-                                                 init_random_connections=init_random_connections))
+                                                 init_random_connections=init_random_connections,
+                                                 activation_function=self.activation_function,
+                                                 sigmoid_factor=self.sigmoid_factor))
 
     def _set_best_networks(self):
 
@@ -98,7 +102,8 @@ class Population:
         self.generation += 1
 
         for i in range(self.population_size):
-            new_nets.append(Network(self.input_nodes, self.output_nodes, bias_node=self.bias_node))
+            new_nets.append(Network(self.input_nodes, self.output_nodes, bias_node=self.bias_node,
+                                    activation_function=self.activation_function, sigmoid_factor=self.sigmoid_factor))
 
         for i in range(self.num_of_bests):
             new_nets[i].all_nodes = deepcopy(self.all_networks[self.max_fitness_indexs[i]].all_nodes)
@@ -130,7 +135,7 @@ class Population:
 
     def feed_forward(self):
         for network in self.all_networks:
-            network.feed_forward(self.activation_function, self.sigmoid_factor)
+            network.feed_forward()
 
     def evolve(self):
 
