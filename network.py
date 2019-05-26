@@ -95,11 +95,13 @@ class Network:
             output_layer = self.all_nodes[self.input_nodes + 1].layer  # first output node is first node after all
             for i in range(self.input_nodes + 1, self.input_nodes + 1 + self.output_nodes):
                 self.all_nodes[i].input_sum = 0
+                self.all_nodes[i].output_value = 0
             # input nodes plus bias node
         else:
             output_layer = self.all_nodes[self.input_nodes].layer  # first output node is first node after all
             for i in range(self.input_nodes, self.input_nodes + self.output_nodes):
                 self.all_nodes[i].input_sum = 0
+                self.all_nodes[i].output_value = 0
             # input nodes
 
         layers = []

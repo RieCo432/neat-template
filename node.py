@@ -17,7 +17,7 @@ class Node:
         if func == ActivationFunctions.sigmoid:
             self.output_value = Node.sigmoid(self.input_sum, sigmoid_fact)
         elif func == ActivationFunctions.step:
-            if self.input_sum < 0:
+            if self.input_sum <= 0:
                 self.output_value = 0
             else:
                 self.output_value = 1
