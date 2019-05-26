@@ -3,6 +3,7 @@ from node import Node
 from connection import Connection
 from random import randint, uniform, random
 from numpy.random import normal
+from config import ActivationFunctions
 
 
 class Network:
@@ -12,7 +13,7 @@ class Network:
     def __init__(self, input_nodes, output_nodes, bias_node=False, init_random_connections=0):
 
         self.input_nodes = input_nodes  # number of input nodes
-        self.output_nodes = output_nodes  # numbe of output nodes
+        self.output_nodes = output_nodes  # number of output nodes
         self.bias_node = bias_node  # is bias node used?
 
         self.fitness = 0  # contains the fitness of this particular network object
@@ -54,7 +55,8 @@ class Network:
         # generate a new connection object with specified parameters (length of connections list will be index of new)
         if not self.connection_exists(from_node, to_node):
             new_connection = Connection(from_node, to_node, weight, len(self.all_connections))
-            self.all_nodes[from_node].connections.append(len(self.all_connections))  # add the index of the new connection
+            self.all_nodes[from_node].connections.append(len(self.all_connections))  # add the index of the new
+            # connection
             self.all_connections.append(new_connection)  # append new connection to the list of all connections
             # to the list of outgoing connections of the from_node
 
@@ -67,7 +69,8 @@ class Network:
         # check that from_node is in a lower layer than to_node and that the connection does not already exist
         iterations = 0  # to limit number of random searches. In case of a fully connected network this would result
         # in an infinite loop
-        while (self.all_nodes[from_node].layer >= self.all_nodes[to_node].layer or self.connection_exists(from_node, to_node)) and iterations <= len(self.all_nodes)**2:
+        while (self.all_nodes[from_node].layer >= self.all_nodes[to_node].layer or
+               self.connection_exists(from_node, to_node)) and iterations <= len(self.all_nodes)**2:
             from_node = randint(0, len(self.all_nodes) - 1)
             to_node = randint(0, len(self.all_nodes) - 1)
             iterations += 1
@@ -84,7 +87,8 @@ class Network:
                 return True
         return False
 
-    def feed_forward(self):
+    def feed_forward(self, activation_function=ActivationFunctions,
+                     sigmoid_factor=ActivationFunctions.default_sigmoid_fact):
 
         if self.bias_node:
             output_layer = self.all_nodes[self.input_nodes + 1].layer  # first output node is first node after all
@@ -105,7 +109,7 @@ class Network:
                 node = self.all_nodes[node_index]
 
                 if node.layer is not 0 and node.layer is not output_layer:  # don't call activate method on output nodes
-                        node.activate()
+                        node.activate(activation_function, sigmoid_factor)
 
                 if node.layer is not output_layer:  # do not feedforward output nodes
                     for connection_number in node.connections:
@@ -116,14 +120,15 @@ class Network:
         # finish by activating output nodes
         if self.bias_node:
             for node in self.all_nodes[self.input_nodes + 1:self.input_nodes + 1 + self.output_nodes]:
-                node.activate()
+                node.activate(activation_function, sigmoid_factor)
         else:
             for node in self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]:
-                node.activate()
+                node.activate(activation_function, sigmoid_factor)
 
     def mutate(self):
 
-        if random() <= EvolutionParams.mutate_weight_refine_probability and len(self.all_connections) > 0:  # probability to change a connection weight
+        if random() <= EvolutionParams.mutate_weight_refine_probability and len(self.all_connections) > 0:
+            # probability to change a connection weight
             connection = self.all_connections[randint(0, len(self.all_connections) - 1)]
             if not connection.active:
                 connection = self.all_connections[randint(0, len(self.all_connections) - 1)]
@@ -168,7 +173,8 @@ class Network:
     def get_outputs(self):
         output_values = []
         if self.bias_node:
-            for output_node in self.all_nodes[self.input_nodes + 1: self.input_nodes + 1 + self.output_nodes]:  # With bias node
+            for output_node in self.all_nodes[self.input_nodes + 1: self.input_nodes + 1 + self.output_nodes]:
+                # With bias node
                 output_values.append(output_node.output_value)
         else:
             for output_node in self.all_nodes[self.input_nodes: self.input_nodes + self.output_nodes]:  # No bias node

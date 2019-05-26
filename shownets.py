@@ -60,18 +60,12 @@ def draw_net(num, nets):
             to_layer = net["nodes"][to_node]["layer"]
             weight = connection["weight"]
 
-            # print(nodes_per_layer)
-            # print(nodes_in_layer)
-            # print(to_layer)
-
             x1 = int(round(((from_layer + 1) / (last_layer + 2)) * width))
-            y1 = int(round(((nodes_in_layer[from_layer].index(from_node) + 1) / (nodes_per_layer[from_layer] + 1) * height)))
+            y1 = int(round(((nodes_in_layer[from_layer].index(from_node) + 1) / (nodes_per_layer[from_layer] + 1) *
+                            height)))
 
             x2 = int(round(((to_layer + 1) / (last_layer + 2)) * width))
             y2 = int(round(((nodes_in_layer[to_layer].index(to_node) + 1) / (nodes_per_layer[to_layer] + 1) * height)))
-            # print(nodes_per_layer)
-            # print(from_node, nodes_in_layer[from_layer].index(from_node), to_node, nodes_in_layer[to_layer].index(to_node))
-            # print(x1, y1, x2, y2)
 
             if weight < 0.0:
                 pygame.draw.line(screen, (255, 0, 0), (x1, y1), (x2, y2), int(ceil(-weight * 8)))
