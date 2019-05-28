@@ -93,12 +93,12 @@ class Network:
 
         if self.bias_node:
             output_layer = self.all_nodes[self.input_nodes + 1].layer  # first output node is first node after all
-            for i in range(self.input_nodes + 1, self.input_nodes + 1 + self.output_nodes):
+            for i in range(self.input_nodes + 1, len(self.all_nodes)):
                 self.all_nodes[i].input_sum = 0
             # input nodes plus bias node
         else:
             output_layer = self.all_nodes[self.input_nodes].layer  # first output node is first node after all
-            for i in range(self.input_nodes, self.input_nodes + self.output_nodes):
+            for i in range(self.input_nodes, len(self.all_nodes)):
                 self.all_nodes[i].input_sum = 0
             # input nodes
 
@@ -173,6 +173,8 @@ class Network:
             node.input_sum = 0.0
         for i in range(self.input_nodes):
             self.all_nodes[i].output_value = input_values[i]
+        if self.bias_node:
+            self.all_nodes[self.input_nodes].output_value = 1  # set bias node
 
     def get_outputs(self):
         output_values = []
